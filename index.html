@@ -12,8 +12,8 @@
        Settings → API から URL と anon key をコピーして貼り付け
        ============================================================ -->
   <script>
-    const SUPABASE_URL      = 'https://eqpbaffvslpxawltrbpc.supabase.co'
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxcGJhZmZ2c2xweGF3bHRyYnBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjgyMDgsImV4cCI6MjA5NTU0NDIwOH0.47kauTC5Ybot15RRvsKc0cBZcNWfYEc5rYxUbUBo8_8'
+    const SUPABASE_URL      = 'https://xxxxxxxxxxxxxxxx.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -200,6 +200,7 @@ const fYM = ym => { if(!ym) return ''; const d=new Date(ym); return `${d.getFull
 const ym1 = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01` }
 // 締切：毎月25日
 const deadline25 = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-25` }
+const fmt = d => d.replace(/-/g,'/')
 const tod = () => new Date().toISOString().split('T')[0]
 const sc  = s => !s?'s-':`s${s}`
 
@@ -213,7 +214,12 @@ function App() {
   useEffect(() => { loadM() }, [])
 
   async function loadM() {
-    const { data } = await sb.from('members').select('*').order('sort_order')
+    const { data, error } = await sb.from('members').select('*').order('sort_order')
+    if (error) {
+      alert('DB接続エラー:\n' + error.message + '\n\nindex.html の先頭にある SUPABASE_URL と SUPABASE_ANON_KEY を確認してください。')
+      setLoading(false)
+      return
+    }
     setMembers(data || [])
     setLoading(false)
   }
@@ -529,36 +535,56 @@ function SummaryPage({ active }) {
 
 // ── レポート ─────────────────────────────────────────────────
 function ReportPage({ active }) {
-  const [reports,setReports]=useState([])
-  const [selId,  setSelId]  =useState(null)
-  const [report, setReport] =useState(null)
-  const [rows,   setRows]   =useState([])
-  const [loaded, setLoaded] =useState(false)
+  const [reports,  setReports]  = useState([])
+  const [selId,    setSelId]    = useState(null)
+  const [report,   setReport]   = useState(null)
+  const [rows,     setRows]     = useState([])
+  const [loaded,   setLoaded]   = useState(false)
+  const [repDate,  setRepDate]  = useState(tod())   // 報告日（編集可）
+  const [savingRD, setSavingRD] = useState(false)
 
   useEffect(()=>{ if(active&&!loaded){ load(); setLoaded(true) } },[active])
 
   async function load() {
     const { data } = await sb.from('monthly_reports').select('*').order('year_month',{ascending:false}).limit(24)
     setReports(data||[])
-    if(data?.length){ setSelId(data[0].id); setReport(data[0]); loadRows(data[0].id) }
+    if(data?.length){ setSelId(data[0].id); setReport(data[0]); loadRows(data[0].id); setRepDate(data[0].report_date||tod()) }
   }
   async function loadRows(id) {
     const { data } = await sb.from('v_summary').select('*').eq('report_id',id).order('sort_order')
     setRows(data||[])
   }
-  function pick(id){ const r=reports.find(r=>r.id===id); setSelId(id); setReport(r); loadRows(id) }
+  function pick(id){
+    const r=reports.find(r=>r.id===id)
+    setSelId(id); setReport(r); loadRows(id); setRepDate(r.report_date||tod())
+  }
+  async function saveReportDate(date) {
+    setSavingRD(true)
+    const { data } = await sb.from('monthly_reports').update({report_date:date}).eq('id',selId).select().single()
+    if(data){ setReport(p=>({...p,report_date:date})); setReports(p=>p.map(r=>r.id===selId?{...r,report_date:date}:r)) }
+    setSavingRD(false)
+  }
   async function complete(){
-    await sb.from('monthly_reports').update({status:'completed'}).eq('id',selId)
-    setReport(p=>({...p,status:'completed'})); setReports(p=>p.map(r=>r.id===selId?{...r,status:'completed'}:r))
+    await sb.from('monthly_reports').update({status:'completed',report_date:repDate}).eq('id',selId)
+    setReport(p=>({...p,status:'completed',report_date:repDate}))
+    setReports(p=>p.map(r=>r.id===selId?{...r,status:'completed',report_date:repDate}:r))
   }
   const totalAll=rows.reduce((s,r)=>s+(r.total_score||0),0)
 
   return (
     <>
-      <div className="row np" style={{marginBottom:14}}>
+      <div className="row np" style={{marginBottom:14,flexWrap:'wrap',gap:8}}>
         <select className="inp" style={{width:'auto'}} value={selId||''} onChange={e=>pick(e.target.value)}>
           {reports.map(r=><option key={r.id} value={r.id}>{fYM(r.year_month)}</option>)}
         </select>
+        {/* 報告日入力 */}
+        <div style={{display:'flex',alignItems:'center',gap:6}}>
+          <label style={{fontSize:12,color:'var(--tx2)',whiteSpace:'nowrap'}}>報告日：</label>
+          <input type="date" className="inp" style={{width:'auto',height:36}}
+            value={repDate}
+            onChange={e=>{ setRepDate(e.target.value); saveReportDate(e.target.value) }} />
+          {savingRD && <span style={{fontSize:11,color:'var(--tx3)'}}>保存中…</span>}
+        </div>
         <div style={{marginLeft:'auto',display:'flex',gap:8}}>
           {report?.status==='open'&&rows.length>0&&rows.every(r=>r.is_submitted)&&
             <button className="btn bo" onClick={complete}>完了にする</button>}
@@ -569,7 +595,7 @@ function ReportPage({ active }) {
         <div className="rt">5S 活動チェックリスト</div>
         <div className="rm">
           <span>報告月：{fYM(report?.year_month)}</span>
-          <span>報告日：{report?.report_date?.replace(/-/g,'/')||'—'}</span>
+          <span>報告日：{repDate?.replace(/-/g,'/')||'—'}</span>
           <span>締切：{report?.deadline?.replace(/-/g,'/')||'—'}</span>
           <span className={`badge ${report?.status==='completed'?'b-done':'b-open'}`}>{report?.status==='completed'?'完了':'進行中'}</span>
         </div>
@@ -640,7 +666,7 @@ function SettingsPage({ onUpdate }) {
   async function addM(){
     if(!nn.trim()) return
     const mx=memb.reduce((m,x)=>Math.max(m,x.sort_order||0),0)
-    await sb.from('members').insert({name:nn.trim(),sort_order:mx+1,s5_location_ids:[],review_location_ids:[],is_reporter_this_month:false,reporter_rotation_order:null})
+    await sb.from('members').insert({name:nn.trim(),sort_order:mx+1,s5_location_ids:[],review_location_ids:[],is_reporter_this_month:false,in_rotation:false})
     setNn(''); loadAll(); onUpdate(); flash('ok','追加しました')
   }
   async function delM(id){
