@@ -225,7 +225,23 @@ function App() {
   }
 
   if (loading) return <Spin />
-  if (!user)   return <NameScreen members={members} onSelect={setUser} />
+  if (!user)   return <NameScreen members={members} onSelect={setUser} onOpenSettings={() => setUser('__settings__')} />
+
+  // 名前選択前に設定を開く
+  if (user === '__settings__') return (
+    <div id="shell">
+      <header id="hd">
+        <div id="hd-left">5S 活動報告</div>
+        <div id="hd-logo"><div id="hd-mark">彩</div><div id="hd-name">SAIBOKU</div></div>
+        <div id="hd-right">
+          <button className="btn bo" style={{fontSize:12,height:30,padding:'0 12px'}} onClick={() => setUser(null)}>← 名前選択に戻る</button>
+        </div>
+      </header>
+      <main id="main">
+        <div className="page on"><SettingsPage onUpdate={loadM} /></div>
+      </main>
+    </div>
+  )
 
   return (
     <div id="shell">
@@ -260,20 +276,31 @@ function App() {
 }
 
 // ── 名前選択 ────────────────────────────────────────────────
-function NameScreen({ members, onSelect }) {
+function NameScreen({ members, onSelect, onOpenSettings }) {
   return (
     <div id="ns">
       <div id="nc">
-        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:24}}>
-          <div id="hd-mark" style={{width:34,height:34,fontSize:17}}>彩</div>
-          <div>
-            <div style={{fontSize:16,fontWeight:700,letterSpacing:'.08em',color:'var(--gr)'}}>SAIBOKU</div>
-            <div style={{fontSize:11,color:'var(--tx3)'}}>5S 活動報告システム</div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <div id="hd-mark" style={{width:34,height:34,fontSize:17}}>彩</div>
+            <div>
+              <div style={{fontSize:16,fontWeight:700,letterSpacing:'.08em',color:'var(--gr)'}}>SAIBOKU</div>
+              <div style={{fontSize:11,color:'var(--tx3)'}}>5S 活動報告システム</div>
+            </div>
           </div>
+          <button className="icon-btn" onClick={onOpenSettings} title="設定">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
         </div>
         <div style={{fontSize:12,color:'var(--tx2)',marginBottom:12,fontWeight:600}}>あなたのお名前を選んでください</div>
         {members.length === 0
-          ? <p className="empty">担当者が登録されていません。設定から追加してください。</p>
+          ? <div>
+              <p className="empty" style={{marginBottom:12}}>担当者が登録されていません。</p>
+              <button className="btn bp" style={{width:'100%'}} onClick={onOpenSettings}>設定を開いて担当者を追加する</button>
+            </div>
           : members.map(m => (
             <button key={m.id} className="nb" onClick={() => onSelect(m)}>
               <span>{m.name}</span>
