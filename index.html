@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5S活動報告 | SAIBOKU</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- ============================================================
+       Supabase 接続設定
+       Settings → API から URL と anon key をコピーして貼り付け
+       ============================================================ -->
+  <script>
+    const SUPABASE_URL      = 'https://eqpbaffvslpxawltrbpc.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxcGJhZmZ2c2xweGF3bHRyYnBjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjgyMDgsImV4cCI6MjA5NTU0NDIwOH0.47kauTC5Ybot15RRvsKc0cBZcNWfYEc5rYxUbUBo8_8'
+  </script>
+
+  <!-- CDN ライブラリ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7/babel.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:  #F5F4F0; --sf:  #FFFFFF; --bd:  #E2E0D9; --bd2: #C8C5BC;
+      --tx:  #1A1917; --tx2: #5C5A55; --tx3: #9B9890;
+      --gr:  #2D5A27; --glt: #EDF3EB; --gbd: #C6DEC3;
+      --am:  #B45309; --alt: #FEF3C7;
+      --rd:  #B91C1C; --rlt: #FEE2E2;
+      --bl:  #3730A3; --blt: #EEF2FF; --bbd: #C7D2FE;
+      --r: 8px;
+    }
+    html { font-size: 14px; }
+    body { font-family:'Noto Sans JP',sans-serif; background:var(--bg); color:var(--tx); -webkit-font-smoothing:antialiased; }
+    button { font-family:inherit; cursor:pointer; }
+    input,select,textarea { font-family:inherit; font-size:14px; color:var(--tx); }
+
+    /* Shell */
+    #shell { display:flex; flex-direction:column; height:100dvh; overflow:hidden; }
+    #hd { height:52px; background:var(--sf); border-bottom:1px solid var(--bd); display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 16px; flex-shrink:0; }
+    #hd-left { font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--tx2); }
+    #hd-logo { display:flex; align-items:center; gap:7px; }
+    #hd-mark { width:28px; height:28px; background:var(--gr); border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:14px; flex-shrink:0; }
+    #hd-name { font-size:14px; font-weight:700; letter-spacing:.08em; color:var(--gr); }
+    #hd-right { display:flex; justify-content:flex-end; }
+    #tabs { height:40px; background:var(--sf); border-bottom:1px solid var(--bd); display:flex; align-items:flex-end; padding:0 16px; gap:2px; flex-shrink:0; overflow-x:auto; }
+    .tab { height:36px; padding:0 14px; border:none; border-bottom:2px solid transparent; background:transparent; color:var(--tx2); font-size:13px; font-weight:500; white-space:nowrap; margin-bottom:-1px; transition:color .15s,border-color .15s; }
+    .tab:hover { color:var(--tx); }
+    .tab.on { color:var(--gr); border-bottom-color:var(--gr); }
+    #main { flex:1; overflow-y:auto; padding:20px 16px; }
+    @media(min-width:640px){ #main{ padding:24px; } }
+    .page { max-width:900px; display:none; }
+    .page.on { display:block; }
+
+    /* 名前選択 */
+    #ns { display:flex; align-items:center; justify-content:center; min-height:100dvh; background:var(--bg); padding:24px; }
+    #nc { background:var(--sf); border:1px solid var(--bd); border-radius:12px; padding:32px 28px; width:100%; max-width:360px; box-shadow:0 4px 16px rgba(0,0,0,.08); }
+    .nb { display:flex; align-items:center; justify-content:space-between; width:100%; padding:11px 14px; margin-bottom:7px; background:var(--bg); border:1px solid var(--bd); border-radius:var(--r); font-size:14px; font-weight:500; transition:all .15s; text-align:left; }
+    .nb:hover { border-color:var(--gr); background:var(--glt); color:var(--gr); }
+    .nb:last-child { margin-bottom:0; }
+
+    /* 共通 */
+    .card { background:var(--sf); border:1px solid var(--bd); border-radius:var(--r); padding:16px; margin-bottom:10px; }
+    .stit { font-size:15px; font-weight:700; margin-bottom:12px; }
+    .lbl { font-size:11px; font-weight:600; color:var(--tx3); text-transform:uppercase; letter-spacing:.04em; }
+    .inp { height:38px; padding:0 12px; border:1px solid var(--bd2); border-radius:var(--r); background:var(--bg); outline:none; color:var(--tx); }
+    .inp:focus { border-color:var(--gr); }
+    select.inp { cursor:pointer; }
+    textarea.inp { height:auto; padding:8px 12px; resize:vertical; line-height:1.6; }
+    .btn { height:36px; padding:0 16px; border-radius:var(--r); font-size:13px; font-weight:600; border:none; transition:opacity .15s; }
+    .bp { background:var(--gr); color:#fff; } .bp:hover:not(:disabled){ opacity:.88; } .bp:disabled{ opacity:.45; cursor:not-allowed; }
+    .bo { background:transparent; border:1px solid var(--bd2); color:var(--tx); } .bo:hover{ background:var(--bg); }
+    .bd-btn { background:transparent; border:1px solid var(--rd); color:var(--rd); } .bd-btn:hover{ background:var(--rlt); }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .badge { display:inline-block; font-size:11px; padding:2px 9px; border-radius:20px; font-weight:500; white-space:nowrap; }
+    .b-rep { background:var(--blt); color:var(--bl); border:1px solid var(--bbd); }
+    .b-done{ background:var(--glt); color:var(--gr); border:1px solid var(--gbd); }
+    .b-open{ background:var(--alt); color:var(--am); }
+    .ok  { font-size:12px; color:var(--gr); background:var(--glt); padding:7px 12px; border-radius:6px; margin-bottom:10px; }
+    .err { font-size:12px; color:var(--rd); background:var(--rlt); padding:7px 12px; border-radius:6px; margin-bottom:10px; }
+    .empty { color:var(--tx3); font-size:13px; padding:12px 0; }
+    .divider { border:none; border-top:1px solid var(--bd); margin:14px 0; }
+    .icon-btn { display:flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:var(--r); border:1px solid var(--bd); background:transparent; color:var(--tx2); }
+    .icon-btn:hover { background:var(--bg); }
+
+    /* バナー */
+    .notice { display:flex; align-items:flex-start; gap:10px; padding:10px 14px; border-radius:var(--r); margin-bottom:12px; font-size:13px; line-height:1.6; }
+    .n-rep { background:var(--blt); border:1px solid var(--bbd); color:var(--bl); }
+    .n-s5  { background:var(--glt); border:1px solid var(--gbd); color:var(--gr); }
+
+    /* 箇所カード */
+    .lc { background:var(--sf); border:1px solid var(--bd); border-radius:var(--r); padding:14px 16px; margin-bottom:8px; }
+    .lc-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:6px; }
+    .lc-title { font-size:15px; font-weight:700; }
+    .rt-rev { background:#FDF4FF; color:#7E22CE; border:1px solid #E9D5FF; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:500; }
+    .rt-s5  { background:var(--glt); color:var(--gr); border:1px solid var(--gbd); padding:2px 8px; border-radius:20px; font-size:11px; font-weight:500; }
+
+    /* 5S評価 */
+    .cr-row { margin-bottom:10px; }
+    .cr-lbl { font-size:12px; font-weight:600; color:var(--tx2); margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; }
+    .sc-btns { display:flex; gap:5px; }
+    .sc-btn { flex:1; height:38px; border:1.5px solid var(--bd2); border-radius:var(--r); background:var(--bg); color:var(--tx2); font-size:15px; font-weight:700; transition:all .12s; }
+    .sc-btn:hover:not(.on){ border-color:var(--gr); color:var(--gr); background:var(--glt); }
+    .sc-btn.on { border-color:var(--gr); background:var(--gr); color:#fff; }
+    .g-btn { font-size:10px; font-weight:600; padding:1px 7px; border-radius:10px; border:1px solid var(--bd2); background:var(--bg); color:var(--tx3); }
+    .g-btn:hover { border-color:var(--gr); color:var(--gr); }
+    .g-box { background:var(--bg); border:1px solid var(--bd); border-radius:6px; padding:8px 10px; margin-bottom:8px; font-size:12px; }
+    .g-line { display:flex; gap:7px; align-items:flex-start; margin-bottom:4px; color:var(--tx2); line-height:1.5; }
+    .g-line:last-child { margin-bottom:0; }
+    .gs { display:inline-block; min-width:26px; text-align:center; font-size:10px; font-weight:700; padding:1px 3px; border-radius:3px; flex-shrink:0; }
+    .gs5{background:var(--glt);color:var(--gr)} .gs4{background:#F0FDF4;color:#166534}
+    .gs3{background:var(--alt);color:var(--am)} .gs2{background:#FFF7ED;color:#C2410C} .gs1{background:var(--rlt);color:var(--rd)}
+    .tot { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg); border:1px solid var(--bd); border-radius:var(--r); margin:10px 0; }
+    .tot-v { font-size:26px; font-weight:700; }
+    .tot-m { font-size:13px; color:var(--tx3); font-weight:400; }
+    .sv-row { display:flex; justify-content:flex-end; align-items:center; gap:12px; margin-top:4px; }
+    .sv-msg { font-size:12px; color:var(--gr); font-weight:500; }
+
+    /* テーブル */
+    .tw { overflow-x:auto; border:1px solid var(--bd); border-radius:var(--r); background:var(--sf); }
+    table { width:100%; border-collapse:collapse; font-size:13px; min-width:660px; }
+    thead { background:var(--bg); }
+    th { padding:8px 10px; font-size:11px; font-weight:600; color:var(--tx2); border-bottom:1px solid var(--bd); text-align:center; white-space:nowrap; }
+    th.tl,td.tl { text-align:left; }
+    td { padding:7px 10px; border-bottom:1px solid var(--bd); text-align:center; vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    .tft td { background:var(--bg); border-top:2px solid var(--bd2); font-weight:700; border-bottom:none; }
+    .s1{background:var(--rlt);color:var(--rd);font-weight:600} .s2{background:#FFF7ED;color:#C2410C;font-weight:600}
+    .s3{background:var(--alt);color:var(--am);font-weight:600} .s4{background:#F0FDF4;color:#166534;font-weight:600}
+    .s5{background:var(--glt);color:var(--gr);font-weight:600} .s-{color:var(--tx3)}
+
+    /* 設定 */
+    .stabs { display:flex; gap:2px; border-bottom:1px solid var(--bd); margin-bottom:16px; flex-wrap:wrap; }
+    .stab { height:34px; padding:0 12px; border:none; border-bottom:2px solid transparent; background:transparent; color:var(--tx2); font-size:13px; font-weight:500; margin-bottom:-1px; white-space:nowrap; }
+    .stab.on { color:var(--gr); border-bottom-color:var(--gr); }
+    .lr { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid var(--bd); flex-wrap:wrap; }
+    .lr:last-child { border-bottom:none; }
+    .lnum { width:22px; height:22px; background:var(--bg); border:1px solid var(--bd); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--tx3); flex-shrink:0; }
+    .del { width:26px; height:26px; border-radius:4px; border:1px solid var(--bd); background:transparent; color:var(--tx3); font-size:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .del:hover { border-color:var(--rd); color:var(--rd); background:var(--rlt); }
+    .addr { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+
+    /* レポート */
+    .rw { background:var(--sf); border:1px solid var(--bd); border-radius:var(--r); padding:20px; overflow-x:auto; }
+    .rt { font-size:16px; font-weight:700; margin-bottom:8px; }
+    .rm { display:flex; gap:20px; font-size:12px; color:var(--tx2); flex-wrap:wrap; margin-bottom:14px; }
+    .pn { margin-top:12px; padding-top:10px; border-top:1px solid var(--bd); font-size:11px; color:var(--tx3); line-height:1.8; }
+
+    @media print {
+      #hd,#tabs,.np { display:none !important; }
+      #main { padding:0; overflow:visible; }
+      .page { display:block !important; }
+      .page:not(#pg-report) { display:none !important; }
+      .rw { border:none; padding:0; border-radius:0; }
+      table { font-size:10px; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { createClient } = supabase
+const { useState, useEffect } = React
+
+// ── DB接続 ──────────────────────────────────────────────────
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+// ── 定数 ────────────────────────────────────────────────────
+const CRITERIA = [
+  { key:'seiri',    label:'整理',   sub:'定量化',
+    g:{5:'不要なモノ・不良在庫が全くない状態を常に維持している。',
+       4:'不要なモノはほぼなく、整理された状態が保たれている。',
+       3:'概ね整理されているが、不要なモノが一部混在している。',
+       2:'不要なモノが目立ち、整理が不十分な状態が続いている。',
+       1:'不要なモノ・不良在庫が多く、整理されていない。'} },
+  { key:'seiton',   label:'整頓',   sub:'定位置化',
+    g:{5:'置場・置き方のルールが徹底され、誰でもすぐ取り出せる。',
+       4:'定位置管理がほぼできており、ルールも明示されている。',
+       3:'概ね整頓されているが、改善すべき点が一部残っている。',
+       2:'定位置が定まっていない箇所が多く、探す手間がかかる。',
+       1:'モノの置場が決まっておらず、見た目にも乱雑な状態。'} },
+  { key:'seisou',   label:'清掃',   sub:'標準化',
+    g:{5:'隅々までゴミ・ホコリがなく、使うモノも常にきれいである。',
+       4:'清掃が行き届いており、ほぼ清潔な状態が保たれている。',
+       3:'概ね清掃されているが、一部に汚れや清掃不足がある。',
+       2:'清掃が不定期で、ゴミや汚れが目立つ箇所がある。',
+       1:'ゴミ・ホコリ・汚れが多く、清掃が行われていない状態。'} },
+  { key:'seiketsu', label:'清潔',   sub:'仕組化',
+    g:{5:'整理・整頓・清掃が繰り返され、常に清潔な状態を維持。',
+       4:'清潔な状態がほぼ維持されており、定期的に確認されている。',
+       3:'概ね維持されているが、改善すべき点が一部残っている。',
+       2:'清潔維持の仕組みが不安定で、状態にばらつきがある。',
+       1:'整理・整頓・清掃の繰り返しがなく、清潔状態を維持できていない。'} },
+  { key:'shitsuke', label:'しつけ', sub:'自律化',
+    g:{5:'5Sの仕組みが完全に定着し、全員が自律的に実行している。',
+       4:'ルールが周知されており、ほぼ全員が自律的に取り組んでいる。',
+       3:'仕組みはあるが、一部に周知不足や取り組みのムラがある。',
+       2:'ルールはあるが、守られていない場面が多い。',
+       1:'5Sを維持する仕組みがなく、ルールが守られていない。'} },
+]
+const SK = CRITERIA.map(c => c.key)
+const MJ = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
+const fYM = ym => { if(!ym) return ''; const d=new Date(ym); return `${d.getFullYear()}年${MJ[d.getMonth()]}` }
+const ym1 = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01` }
+const tod = () => new Date().toISOString().split('T')[0]
+const sc  = s => !s?'s-':`s${s}`
+
+// ── App ─────────────────────────────────────────────────────
+function App() {
+  const [members, setMembers] = useState([])
+  const [user,    setUser]    = useState(null)
+  const [tab,     setTab]     = useState('input')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { loadM() }, [])
+
+  async function loadM() {
+    const { data } = await sb.from('members').select('*').order('sort_order')
+    setMembers(data || [])
+    setLoading(false)
+  }
+
+  if (loading) return <Spin />
+  if (!user)   return <NameScreen members={members} onSelect={setUser} />
+
+  return (
+    <div id="shell">
+      <header id="hd">
+        <div id="hd-left">5S 活動報告</div>
+        <div id="hd-logo"><div id="hd-mark">彩</div><div id="hd-name">SAIBOKU</div></div>
+        <div id="hd-right">
+          <button className="icon-btn" onClick={() => setTab('settings')} title="設定">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+      <nav id="tabs">
+        {[['input','チェック入力'],['summary','定点報告一覧'],['report','レポート'],['settings','設定']].map(([id,lbl]) => (
+          <button key={id} className={`tab ${tab===id?'on':''}`} onClick={() => setTab(id)}>{lbl}</button>
+        ))}
+        <button className="tab" style={{marginLeft:'auto',color:'var(--tx3)',fontSize:12}} onClick={() => setUser(null)}>
+          [{user.name}] ▼
+        </button>
+      </nav>
+      <main id="main">
+        <div id="pg-input"    className={`page ${tab==='input'   ?'on':''}`}><InputPage    user={user} /></div>
+        <div id="pg-summary"  className={`page ${tab==='summary' ?'on':''}`}><SummaryPage  active={tab==='summary'} /></div>
+        <div id="pg-report"   className={`page ${tab==='report'  ?'on':''}`}><ReportPage   active={tab==='report'} /></div>
+        <div id="pg-settings" className={`page ${tab==='settings'?'on':''}`}><SettingsPage onUpdate={loadM} /></div>
+      </main>
+    </div>
+  )
+}
+
+// ── 名前選択 ────────────────────────────────────────────────
+function NameScreen({ members, onSelect }) {
+  return (
+    <div id="ns">
+      <div id="nc">
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:24}}>
+          <div id="hd-mark" style={{width:34,height:34,fontSize:17}}>彩</div>
+          <div>
+            <div style={{fontSize:16,fontWeight:700,letterSpacing:'.08em',color:'var(--gr)'}}>SAIBOKU</div>
+            <div style={{fontSize:11,color:'var(--tx3)'}}>5S 活動報告システム</div>
+          </div>
+        </div>
+        <div style={{fontSize:12,color:'var(--tx2)',marginBottom:12,fontWeight:600}}>あなたのお名前を選んでください</div>
+        {members.length === 0
+          ? <p className="empty">担当者が登録されていません。設定から追加してください。</p>
+          : members.map(m => (
+            <button key={m.id} className="nb" onClick={() => onSelect(m)}>
+              <span>{m.name}</span>
+              {m.is_reporter_this_month && <span className="badge b-rep">今月の報告担当</span>}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+  )
+}
+
+// ── チェック入力 ─────────────────────────────────────────────
+// 役割：
+//   5S担当者（s5_location_ids）    … 5Sを実施する人。バナー表示のみ。
+//   確認者  （review_location_ids）… 実施状況を確認して評価点を入力する人。
+function InputPage({ user }) {
+  const [report,  setReport]  = useState(null)
+  const [locs,    setLocs]    = useState([])
+  const [checks,  setChecks]  = useState({})
+  const [guide,   setGuide]   = useState(null)
+  const [saving,  setSaving]  = useState(null)
+  const [savedId, setSavedId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const curYM = ym1()
+  const reviewIds = user.review_location_ids || []
+  const s5Ids     = user.s5_location_ids     || []
+
+  useEffect(() => { load() }, [user.id])
+
+  async function load() {
+    setLoading(true)
+    const { data: ls } = await sb.from('locations').select('*').eq('active',true).order('sort_order')
+    setLocs(ls || [])
+    let rep = null
+    const { data: ex } = await sb.from('monthly_reports').select('*').eq('year_month',curYM).single()
+    if (ex) { rep = ex } else {
+      const dl = new Date(); dl.setMonth(dl.getMonth()+1); dl.setDate(5)
+      const { data: cr } = await sb.from('monthly_reports')
+        .insert({ year_month:curYM, deadline:dl.toISOString().split('T')[0], status:'open' })
+        .select().single()
+      rep = cr
+    }
+    setReport(rep)
+    if (rep && reviewIds.length > 0) {
+      const { data: cs } = await sb.from('checks').select('*').eq('report_id',rep.id).in('location_id',reviewIds)
+      const m = {}; (cs||[]).forEach(c => { m[c.location_id] = c }); setChecks(m)
+    }
+    setLoading(false)
+  }
+
+  const setScore = (lid, k, v) => setChecks(p => ({...p, [lid]:{...(p[lid]||{}), [`score_${k}`]:v}}))
+  const setMemo  = (lid, v)    => setChecks(p => ({...p, [lid]:{...(p[lid]||{}), memo:v}}))
+  const scores   = lid => { const c=checks[lid]||{}; const s={}; SK.forEach(k=>{s[k]=c[`score_${k}`]||null}); return s }
+  const filled   = lid => SK.every(k => checks[lid]?.[`score_${k}`])
+  const total    = lid => SK.reduce((s,k)=>s+(checks[lid]?.[`score_${k}`]||0),0)
+
+  async function save(lid) {
+    if (!report || !filled(lid)) return
+    setSaving(lid)
+    const c = checks[lid]||{}
+    const p = { report_id:report.id, location_id:lid,
+      score_seiri:c.score_seiri, score_seiton:c.score_seiton,
+      score_seisou:c.score_seisou, score_seiketsu:c.score_seiketsu, score_shitsuke:c.score_shitsuke,
+      memo:c.memo||null, checked_at:tod(), reviewed_by_name:user.name, updated_at:new Date().toISOString() }
+    const res = c.id
+      ? await sb.from('checks').update(p).eq('id',c.id).select().single()
+      : await sb.from('checks').insert(p).select().single()
+    if (res.data) { setChecks(prev=>({...prev,[lid]:res.data})); setSavedId(lid); setTimeout(()=>setSavedId(null),2000) }
+    setSaving(null)
+  }
+
+  if (loading) return <Spin />
+  const myLocs = locs.filter(l => reviewIds.includes(l.id))
+  const s5Locs = locs.filter(l => s5Ids.includes(l.id))
+
+  return (
+    <>
+      {user.is_reporter_this_month && (
+        <div className="notice n-rep">
+          <span>📋</span>
+          <span>あなたは<strong>今月の報告担当者</strong>です。全箇所の入力完了後、レポートタブからPDF出力してください。</span>
+        </div>
+      )}
+      {s5Locs.length > 0 && (
+        <div className="notice n-s5">
+          <span>🧹</span>
+          <div>
+            <div style={{fontWeight:600,marginBottom:2}}>あなたの5S担当箇所（実施箇所）</div>
+            <div>{s5Locs.map(l=>l.sub_name?`${l.area}/${l.sub_name}`:l.area).join('　')}</div>
+          </div>
+        </div>
+      )}
+      <div className="row" style={{marginBottom:14}}>
+        <h2 style={{fontSize:17,fontWeight:700}}>{user.name} さんの確認箇所</h2>
+        <span style={{fontSize:12,color:'var(--tx3)'}}>— {fYM(curYM)}</span>
+      </div>
+      {myLocs.length === 0 && <div className="card"><p className="empty">確認箇所が割り当てられていません。設定 → 担当箇所から設定してください。</p></div>}
+      {myLocs.map(loc => {
+        const nm = loc.sub_name ? `${loc.area} / ${loc.sub_name}` : loc.area
+        const sv = scores(loc.id), fi = filled(loc.id), to = total(loc.id), sd = !!checks[loc.id]?.id
+        return (
+          <div key={loc.id} className="lc">
+            <div className="lc-head">
+              <span className="lc-title">{nm}</span>
+              <div className="row" style={{gap:6}}>
+                <span className="rt-rev">確認者</span>
+                {sd && <span style={{fontSize:11,color:'var(--gr)'}}>保存済み ✓</span>}
+              </div>
+            </div>
+            {CRITERIA.map(c => {
+              const gk = `${loc.id}-${c.key}`
+              return (
+                <div key={c.key} className="cr-row">
+                  <div className="cr-lbl">
+                    <span>{c.label}<span style={{color:'var(--tx3)',fontWeight:400,fontSize:11}}> ・・・{c.sub}</span></span>
+                    <button className="g-btn" onClick={() => setGuide(guide===gk?null:gk)}>評価基準 {guide===gk?'▲':'▼'}</button>
+                  </div>
+                  {guide===gk && (
+                    <div className="g-box">
+                      {[5,4,3,2,1].map(v=>(
+                        <div key={v} className="g-line"><span className={`gs gs${v}`}>{v}点</span><span>{c.g[v]}</span></div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="sc-btns">
+                    {[1,2,3,4,5].map(v=>(
+                      <button key={v} className={`sc-btn ${sv[c.key]===v?'on':''}`} onClick={()=>setScore(loc.id,c.key,v)}>{v}</button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+            <div className="tot">
+              <span style={{fontWeight:600,color:'var(--tx2)'}}>合計点</span>
+              <span className="tot-v">{fi?to:'—'}<span className="tot-m"> / 25</span></span>
+            </div>
+            <div style={{marginBottom:12}}>
+              <label className="lbl" style={{display:'block',marginBottom:5}}>特記事項（任意）</label>
+              <textarea className="inp" style={{width:'100%'}} rows={2}
+                value={checks[loc.id]?.memo||''} onChange={e=>setMemo(loc.id,e.target.value)}
+                placeholder="気になる点・改善提案など" />
+            </div>
+            <div className="sv-row">
+              {savedId===loc.id && <span className="sv-msg">保存しました ✓</span>}
+              <button className="btn bp" onClick={()=>save(loc.id)} disabled={!fi||saving===loc.id}>
+                {saving===loc.id?'保存中…':sd?'更新する':'保存する'}
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </>
+  )
+}
+
+// ── 定点報告一覧 ─────────────────────────────────────────────
+function SummaryPage({ active }) {
+  const [reports,setReports]=useState([])
+  const [selId,  setSelId]  =useState(null)
+  const [report, setReport] =useState(null)
+  const [rows,   setRows]   =useState([])
+  const [loaded, setLoaded] =useState(false)
+  const [exp,    setExp]    =useState(null)
+
+  useEffect(()=>{ if(active&&!loaded){ load(); setLoaded(true) } },[active])
+
+  async function load() {
+    const { data } = await sb.from('monthly_reports').select('*').order('year_month',{ascending:false}).limit(24)
+    setReports(data||[])
+    if(data?.length){ setSelId(data[0].id); setReport(data[0]); loadRows(data[0].id) }
+  }
+  async function loadRows(id) {
+    const { data } = await sb.from('v_summary').select('*').eq('report_id',id).order('sort_order')
+    setRows(data||[])
+  }
+  function pick(id){ const r=reports.find(r=>r.id===id); setSelId(id); setReport(r); loadRows(id) }
+
+  return (
+    <>
+      <div className="row np" style={{marginBottom:10}}>
+        <select className="inp" style={{width:'auto'}} value={selId||''} onChange={e=>pick(e.target.value)}>
+          {reports.map(r=><option key={r.id} value={r.id}>{fYM(r.year_month)}</option>)}
+        </select>
+        {report && <>
+          <span style={{fontSize:12,color:'var(--tx2)'}}>締切：{report.deadline?.replace(/-/g,'/')||'—'}</span>
+          <span className={`badge ${report.status==='completed'?'b-done':'b-open'}`}>{report.status==='completed'?'完了':'進行中'}</span>
+          <span style={{fontSize:12,color:'var(--tx2)'}}>入力済み <b style={{color:'var(--gr)'}}>{rows.filter(r=>r.is_submitted).length}</b>/{rows.length}箇所</span>
+        </>}
+      </div>
+      <div className="tw">
+        <table>
+          <thead><tr>
+            <th style={{width:30}}>No.</th>
+            <th className="tl" style={{minWidth:130}}>場所</th>
+            <th style={{width:74}}>5S担当者</th>
+            <th style={{width:74}}>確認者</th>
+            {CRITERIA.map(c=><th key={c.key} style={{width:42}}>{c.label}</th>)}
+            <th style={{width:42}}>合計</th>
+          </tr></thead>
+          <tbody>
+            {rows.map((r,i)=>{
+              const nm=r.sub_name?`${r.area} / ${r.sub_name}`:r.area
+              return (
+                <>
+                  <tr key={r.location_id} style={{cursor:'pointer'}} onClick={()=>setExp(exp===r.location_id?null:r.location_id)}>
+                    <td style={{fontSize:11,color:'var(--tx3)'}}>{i+1}</td>
+                    <td className="tl"><span style={{fontWeight:500}}>{nm}</span></td>
+                    <td style={{fontSize:11,color:'var(--tx2)'}}>{r.s5_names||'—'}</td>
+                    <td style={{fontSize:11,color:'#7E22CE'}}>{r.review_names||'—'}</td>
+                    {SK.map(k=><td key={k} className={sc(r[`score_${k}`])}>{r[`score_${k}`]??'—'}</td>)}
+                    <td style={{fontWeight:700}}>{r.is_submitted?r.total_score:'—'}</td>
+                  </tr>
+                  {exp===r.location_id&&(r.memo||r.reviewed_by_name)&&(
+                    <tr key={`m${r.location_id}`}>
+                      <td colSpan={10} style={{background:'var(--glt)',fontSize:12,color:'var(--tx2)',padding:'6px 12px'}}>
+                        {r.memo&&<><b style={{color:'var(--gr)'}}>特記事項：</b>{r.memo}　</>}
+                        {r.reviewed_by_name&&<span style={{color:'#7E22CE'}}>確認者：{r.reviewed_by_name}</span>}
+                      </td>
+                    </tr>
+                  )}
+                </>
+              )
+            })}
+          </tbody>
+          {rows.length>0&&<tfoot><tr className="tft">
+            <td colSpan={4} className="tl" style={{padding:'8px 10px',fontSize:12}}>合計</td>
+            {SK.map(k=><td key={k}>{rows.filter(r=>r[`score_${k}`]).reduce((s,r)=>s+(r[`score_${k}`]||0),0)||'—'}</td>)}
+            <td>{rows.reduce((s,r)=>s+(r.total_score||0),0)||'—'}</td>
+          </tr></tfoot>}
+        </table>
+      </div>
+      {!rows.length&&<p className="empty">この月のデータがありません</p>}
+    </>
+  )
+}
+
+// ── レポート ─────────────────────────────────────────────────
+function ReportPage({ active }) {
+  const [reports,setReports]=useState([])
+  const [selId,  setSelId]  =useState(null)
+  const [report, setReport] =useState(null)
+  const [rows,   setRows]   =useState([])
+  const [loaded, setLoaded] =useState(false)
+
+  useEffect(()=>{ if(active&&!loaded){ load(); setLoaded(true) } },[active])
+
+  async function load() {
+    const { data } = await sb.from('monthly_reports').select('*').order('year_month',{ascending:false}).limit(24)
+    setReports(data||[])
+    if(data?.length){ setSelId(data[0].id); setReport(data[0]); loadRows(data[0].id) }
+  }
+  async function loadRows(id) {
+    const { data } = await sb.from('v_summary').select('*').eq('report_id',id).order('sort_order')
+    setRows(data||[])
+  }
+  function pick(id){ const r=reports.find(r=>r.id===id); setSelId(id); setReport(r); loadRows(id) }
+  async function complete(){
+    await sb.from('monthly_reports').update({status:'completed'}).eq('id',selId)
+    setReport(p=>({...p,status:'completed'})); setReports(p=>p.map(r=>r.id===selId?{...r,status:'completed'}:r))
+  }
+  const totalAll=rows.reduce((s,r)=>s+(r.total_score||0),0)
+
+  return (
+    <>
+      <div className="row np" style={{marginBottom:14}}>
+        <select className="inp" style={{width:'auto'}} value={selId||''} onChange={e=>pick(e.target.value)}>
+          {reports.map(r=><option key={r.id} value={r.id}>{fYM(r.year_month)}</option>)}
+        </select>
+        <div style={{marginLeft:'auto',display:'flex',gap:8}}>
+          {report?.status==='open'&&rows.length>0&&rows.every(r=>r.is_submitted)&&
+            <button className="btn bo" onClick={complete}>完了にする</button>}
+          <button className="btn bp" onClick={()=>window.print()} disabled={!rows.length}>PDF出力（印刷）</button>
+        </div>
+      </div>
+      <div className="rw">
+        <div className="rt">5S 活動チェックリスト</div>
+        <div className="rm">
+          <span>報告月：{fYM(report?.year_month)}</span>
+          <span>報告日：{report?.report_date?.replace(/-/g,'/')||'—'}</span>
+          <span>締切：{report?.deadline?.replace(/-/g,'/')||'—'}</span>
+          <span className={`badge ${report?.status==='completed'?'b-done':'b-open'}`}>{report?.status==='completed'?'完了':'進行中'}</span>
+        </div>
+        <div className="tw" style={{border:'none',borderRadius:0}}>
+          <table>
+            <thead><tr>
+              <th style={{width:28}}>No.</th>
+              <th className="tl" style={{minWidth:120}}>場所</th>
+              <th style={{width:64}}>5S担当者</th>
+              <th style={{width:64}}>確認者</th>
+              {CRITERIA.map(c=><th key={c.key} style={{width:38}}>{c.label}</th>)}
+              <th style={{width:38}}>合計</th>
+              <th className="tl">特記事項</th>
+            </tr></thead>
+            <tbody>
+              {rows.map((r,i)=>{
+                const nm=r.sub_name?`${r.area} / ${r.sub_name}`:r.area
+                return (
+                  <tr key={r.location_id}>
+                    <td style={{fontSize:11,color:'var(--tx3)'}}>{i+1}</td>
+                    <td className="tl" style={{fontSize:12}}>{nm}</td>
+                    <td style={{fontSize:11,color:'var(--tx2)'}}>{r.s5_names||'—'}</td>
+                    <td style={{fontSize:11,color:'#7E22CE'}}>{r.review_names||'—'}</td>
+                    {SK.map(k=><td key={k} className={sc(r[`score_${k}`])}>{r[`score_${k}`]??'—'}</td>)}
+                    <td style={{fontWeight:700}}>{r.is_submitted?r.total_score:'—'}</td>
+                    <td className="tl" style={{fontSize:11,color:'var(--tx3)'}}>{r.memo||''}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+            {rows.length>0&&<tfoot><tr className="tft">
+              <td colSpan={4} className="tl" style={{padding:'7px 10px',fontSize:12}}>合計</td>
+              {SK.map(k=><td key={k}>{rows.filter(r=>r[`score_${k}`]).reduce((s,r)=>s+(r[`score_${k}`]||0),0)||'—'}</td>)}
+              <td style={{fontSize:14}}>{totalAll||'—'}</td>
+              <td></td>
+            </tr></tfoot>}
+          </table>
+        </div>
+        <div className="pn">
+          <b>評価基準：</b>1整理（定量化）　2整頓（定位置化）　3清掃（標準化）　4清潔（仕組化）　5しつけ（自律化）<br/>
+          各項目1〜5点（5段階）　確認者が評価点を入力
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ── 設定 ─────────────────────────────────────────────────────
+function SettingsPage({ onUpdate }) {
+  const [sub,  setSub]  = useState('members')
+  const [memb, setMemb] = useState([])
+  const [locs, setLocs] = useState([])
+  const [msg,  setMsg]  = useState(null)
+
+  useEffect(()=>{ loadAll() },[])
+
+  async function loadAll(){
+    const [{data:m},{data:l}] = await Promise.all([
+      sb.from('members').select('*').order('sort_order'),
+      sb.from('locations').select('*').eq('active',true).order('sort_order'),
+    ])
+    setMemb(m||[]); setLocs(l||[])
+  }
+  const flash = (t,x) => { setMsg({t,x}); setTimeout(()=>setMsg(null),2500) }
+
+  // 担当者
+  const [nn,setNn]=useState('')
+  async function addM(){
+    if(!nn.trim()) return
+    const mx=memb.reduce((m,x)=>Math.max(m,x.sort_order||0),0)
+    await sb.from('members').insert({name:nn.trim(),sort_order:mx+1,s5_location_ids:[],review_location_ids:[],is_reporter_this_month:false})
+    setNn(''); loadAll(); onUpdate(); flash('ok','追加しました')
+  }
+  async function delM(id){
+    if(!confirm('この担当者を削除しますか？')) return
+    await sb.from('members').delete().eq('id',id); loadAll(); onUpdate(); flash('ok','削除しました')
+  }
+
+  // 担当箇所
+  function toggle(mid,lid,role){
+    const f=role==='s5'?'s5_location_ids':'review_location_ids'
+    setMemb(p=>p.map(m=>m.id!==mid?m:{...m,[f]:(m[f]||[]).includes(lid)?(m[f]||[]).filter(x=>x!==lid):[...(m[f]||[]),lid]}))
+  }
+  async function saveA(mid){
+    const m=memb.find(x=>x.id===mid)
+    await sb.from('members').update({s5_location_ids:m.s5_location_ids||[],review_location_ids:m.review_location_ids||[]}).eq('id',mid)
+    onUpdate(); flash('ok','担当箇所を保存しました')
+  }
+
+  // 定点観測場所
+  const [na,setNa]=useState(''); const [ns2,setNs2]=useState('')
+  async function addL(){
+    if(!na.trim()) return
+    const mx=locs.reduce((m,x)=>Math.max(m,x.sort_order||0),0)
+    await sb.from('locations').insert({area:na.trim(),sub_name:ns2.trim()||null,sort_order:mx+1,active:true})
+    setNa(''); setNs2(''); loadAll(); flash('ok','追加しました')
+  }
+  async function delL(id){
+    if(!confirm('この場所を削除しますか？')) return
+    await sb.from('locations').update({active:false}).eq('id',id); loadAll(); flash('ok','削除しました')
+  }
+
+  // 報告担当者
+  async function toggleRep(id){
+    const m=memb.find(x=>x.id===id)
+    await sb.from('members').update({is_reporter_this_month:!m.is_reporter_this_month}).eq('id',id)
+    loadAll(); onUpdate()
+  }
+
+  return (
+    <>
+      <h1 style={{fontSize:17,fontWeight:700,marginBottom:14}}>設定</h1>
+      {msg&&<div className={msg.t==='ok'?'ok':'err'}>{msg.x}</div>}
+      <div className="stabs">
+        {[['members','担当者'],['assign','担当箇所'],['locations','定点観測場所'],['reporter','報告担当者']].map(([id,lbl])=>(
+          <button key={id} className={`stab ${sub===id?'on':''}`} onClick={()=>setSub(id)}>{lbl}</button>
+        ))}
+      </div>
+
+      {sub==='members'&&(
+        <div className="card">
+          <div className="stit">担当者の管理</div>
+          {memb.map(m=>(
+            <div key={m.id} className="lr">
+              <div className="lnum">{m.sort_order}</div>
+              <span style={{flex:1,fontWeight:500}}>{m.name}</span>
+              <button className="del" onClick={()=>delM(m.id)}>×</button>
+            </div>
+          ))}
+          {!memb.length&&<p className="empty">担当者がいません</p>}
+          <div className="addr">
+            <input className="inp" style={{flex:1}} value={nn} onChange={e=>setNn(e.target.value)}
+              placeholder="新しい担当者名" onKeyDown={e=>e.key==='Enter'&&addM()} />
+            <button className="btn bp" onClick={addM}>追加</button>
+          </div>
+        </div>
+      )}
+
+      {sub==='assign'&&(
+        <div className="card">
+          <div className="stit">担当者ごとの担当箇所</div>
+          <div className="row" style={{marginBottom:10,gap:14}}>
+            <span className="rt-s5"  style={{padding:'3px 10px',fontSize:12}}>緑 = 5S担当者（実施者）</span>
+            <span className="rt-rev" style={{padding:'3px 10px',fontSize:12}}>紫 = 確認者（評価点を入力）</span>
+          </div>
+          <p style={{fontSize:12,color:'var(--tx2)',marginBottom:16}}>変更後は「保存」を押してください。</p>
+          {memb.map(m=>(
+            <div key={m.id} style={{marginBottom:20}}>
+              <div className="row" style={{marginBottom:8}}>
+                <span style={{fontWeight:700,fontSize:14}}>{m.name}</span>
+                <button className="btn bp" style={{height:28,fontSize:12,padding:'0 12px',marginLeft:'auto'}} onClick={()=>saveA(m.id)}>保存</button>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 60px 60px',fontSize:12}}>
+                <div style={{padding:'4px 8px',color:'var(--tx3)',fontWeight:600,borderBottom:'1px solid var(--bd)'}}>箇所</div>
+                <div style={{padding:'4px',color:'var(--gr)',fontWeight:600,textAlign:'center',borderBottom:'1px solid var(--bd)'}}>5S担当</div>
+                <div style={{padding:'4px',color:'#7E22CE',fontWeight:600,textAlign:'center',borderBottom:'1px solid var(--bd)'}}>確認者</div>
+                {locs.map(l=>{
+                  const ln=l.sub_name?`${l.area}/${l.sub_name}`:l.area
+                  const h5=(m.s5_location_ids||[]).includes(l.id)
+                  const hr=(m.review_location_ids||[]).includes(l.id)
+                  return (
+                    <>
+                      <div key={`n${l.id}`} style={{padding:'5px 8px',borderBottom:'1px solid var(--bd)',display:'flex',alignItems:'center'}}>{ln}</div>
+                      <div key={`s${l.id}`} style={{display:'flex',alignItems:'center',justifyContent:'center',borderBottom:'1px solid var(--bd)'}}>
+                        <input type="checkbox" checked={h5} onChange={()=>toggle(m.id,l.id,'s5')} style={{width:16,height:16,accentColor:'var(--gr)',cursor:'pointer'}} />
+                      </div>
+                      <div key={`r${l.id}`} style={{display:'flex',alignItems:'center',justifyContent:'center',borderBottom:'1px solid var(--bd)'}}>
+                        <input type="checkbox" checked={hr} onChange={()=>toggle(m.id,l.id,'review')} style={{width:16,height:16,accentColor:'#7E22CE',cursor:'pointer'}} />
+                      </div>
+                    </>
+                  )
+                })}
+              </div>
+              {!locs.length&&<p className="empty">先に定点観測場所を登録してください</p>}
+            </div>
+          ))}
+          {!memb.length&&<p className="empty">先に担当者を登録してください</p>}
+        </div>
+      )}
+
+      {sub==='locations'&&(
+        <div className="card">
+          <div className="stit">定点観測場所の管理</div>
+          {locs.map(l=>(
+            <div key={l.id} className="lr">
+              <div className="lnum">{l.sort_order}</div>
+              <span style={{flex:1}}><b>{l.area}</b>{l.sub_name&&<span style={{color:'var(--tx3)'}}> / {l.sub_name}</span>}</span>
+              <button className="del" onClick={()=>delL(l.id)}>×</button>
+            </div>
+          ))}
+          {!locs.length&&<p className="empty">場所が登録されていません</p>}
+          <div className="divider" />
+          <div style={{fontSize:12,color:'var(--tx2)',marginBottom:8}}>新しい場所を追加</div>
+          <div className="addr">
+            <input className="inp" style={{flex:2}} value={na} onChange={e=>setNa(e.target.value)} placeholder="大分類（例: 現場休憩室）" />
+            <input className="inp" style={{flex:1}} value={ns2} onChange={e=>setNs2(e.target.value)} placeholder="詳細（例: 交配）任意" />
+            <button className="btn bp" onClick={addL}>追加</button>
+          </div>
+        </div>
+      )}
+
+      {sub==='reporter'&&(
+        <div className="card">
+          <div className="stit">今月の報告担当者</div>
+          <p style={{fontSize:12,color:'var(--tx2)',marginBottom:14}}>ONにした担当者が名前選択画面に「今月の報告担当者」として表示されます。</p>
+          {memb.map(m=>(
+            <div key={m.id} className="lr">
+              <span style={{flex:1,fontWeight:500}}>{m.name}</span>
+              <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',fontSize:13}}>
+                <input type="checkbox" checked={!!m.is_reporter_this_month} onChange={()=>toggleRep(m.id)}
+                  style={{width:16,height:16,accentColor:'var(--gr)'}} />
+                今月の報告担当
+              </label>
+              {m.is_reporter_this_month&&<span className="badge b-rep">担当中</span>}
+            </div>
+          ))}
+          {!memb.length&&<p className="empty">先に担当者を登録してください</p>}
+        </div>
+      )}
+    </>
+  )
+}
+
+function Spin() {
+  return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100dvh',color:'var(--tx3)'}}>読み込み中…</div>
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />)
+</script>
+</body>
+</html>
