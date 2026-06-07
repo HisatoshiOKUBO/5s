@@ -231,7 +231,7 @@ function App() {
     <div id="shell">
       <header id="hd">
         <div id="hd-left">5S 活動報告</div>
-        <div id="hd-logo"><div id="hd-mark">彩</div><div id="hd-name">SAIBOKU</div></div>
+        <div id="hd-logo"><svg width="120" height="28" viewBox="0 0 120 28" fill="none"><rect x="0" y="4" width="20" height="20" rx="3" fill="var(--gr)"/><text x="10" y="18.5" textAnchor="middle" fill="white" style={{fontSize:'11px',fontFamily:'Noto Sans JP,sans-serif',fontWeight:700}}>彩</text><text x="28" y="20" fill="var(--gr)" style={{fontSize:'15px',fontFamily:'Noto Sans JP,sans-serif',fontWeight:700,letterSpacing:'0.05em'}}>SAIBOKU</text></svg></div>
         <div id="hd-right">
           <button className="btn bo" style={{fontSize:12,height:30,padding:'0 12px'}} onClick={() => { loadM(); setUser(null) }}>← 戻る</button>
         </div>
@@ -249,7 +249,7 @@ function App() {
     <div id="shell">
       <header id="hd">
         <div id="hd-left">5S 活動報告</div>
-        <div id="hd-logo"><div id="hd-mark">彩</div><div id="hd-name">SAIBOKU</div></div>
+        <div id="hd-logo"><svg width="120" height="28" viewBox="0 0 120 28" fill="none"><rect x="0" y="4" width="20" height="20" rx="3" fill="var(--gr)"/><text x="10" y="18.5" textAnchor="middle" fill="white" style={{fontSize:'11px',fontFamily:'Noto Sans JP,sans-serif',fontWeight:700}}>彩</text><text x="28" y="20" fill="var(--gr)" style={{fontSize:'15px',fontFamily:'Noto Sans JP,sans-serif',fontWeight:700,letterSpacing:'0.05em'}}>SAIBOKU</text></svg></div>
         <div id="hd-right">
           <button className="tab" style={{fontSize:12,color:'var(--tx3)',border:'none',height:30}} onClick={() => setUser(null)}>[{user.name}] ▼</button>
           <button className="icon-btn" onClick={() => setUser('__settings__')} title="設定">
@@ -280,12 +280,13 @@ function NameScreen({ members, onSelect, onSettings }) {
     <div id="ns">
       <div id="nc">
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:24}}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div id="hd-mark" style={{width:34,height:34,fontSize:17}}>彩</div>
-            <div>
-              <div style={{fontSize:16,fontWeight:700,letterSpacing:'.08em',color:'var(--gr)'}}>SAIBOKU</div>
-              <div style={{fontSize:11,color:'var(--tx3)'}}>5S 活動報告システム</div>
-            </div>
+          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+            <svg width="130" height="28" viewBox="0 0 130 28" fill="none">
+              <rect x="0" y="3" width="22" height="22" rx="4" fill="var(--gr)"/>
+              <text x="11" y="18.5" textAnchor="middle" fill="white" style={{fontSize:'12px',fontFamily:'Noto Sans JP,sans-serif',fontWeight:700}}>彩</text>
+              <text x="30" y="20" fill="var(--gr)" style={{fontSize:'16px',fontFamily:'Noto Sans JP,sans-serif',fontWeight:700,letterSpacing:'0.05em'}}>SAIBOKU</text>
+            </svg>
+            <div style={{fontSize:11,color:'var(--tx3)',paddingLeft:2}}>5S 活動報告システム</div>
           </div>
           <button className="icon-btn" onClick={onSettings} title="設定">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -466,10 +467,9 @@ function SummaryPage({ active }) {
   const [selId,  setSelId]  =useState(null)
   const [report, setReport] =useState(null)
   const [rows,   setRows]   =useState([])
-  const [loaded, setLoaded] =useState(false)
   const [exp,    setExp]    =useState(null)
 
-  useEffect(()=>{ if(active&&!loaded){ load(); setLoaded(true) } },[active])
+  useEffect(()=>{ if(active){ load() } },[active])
 
   async function load() {
     const { data } = await sb.from('monthly_reports').select('*').order('year_month',{ascending:false}).limit(24)
@@ -547,11 +547,10 @@ function ReportPage({ active }) {
   const [selId,    setSelId]    = useState(null)
   const [report,   setReport]   = useState(null)
   const [rows,     setRows]     = useState([])
-  const [loaded,   setLoaded]   = useState(false)
   const [repDate,  setRepDate]  = useState(tod())   // 報告日（編集可）
   const [savingRD, setSavingRD] = useState(false)
 
-  useEffect(()=>{ if(active&&!loaded){ load(); setLoaded(true) } },[active])
+  useEffect(()=>{ if(active){ load() } },[active])
 
   async function load() {
     const { data } = await sb.from('monthly_reports').select('*').order('year_month',{ascending:false}).limit(24)
