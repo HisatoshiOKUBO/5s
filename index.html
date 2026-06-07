@@ -203,6 +203,9 @@ const fYM = ym => { if(!ym) return ''; const d=new Date(ym); return `${d.getFull
 const ym1 = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01` }
 // 締切：毎月25日
 const deadline25 = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-25` }
+// year_month文字列（例: "2026-06-01"）から当月25日を返す
+const dl25 = ym => ym ? ym.slice(0,7) + '-25' : '—'
+const fmtDl = ym => { if(!ym) return '—'; const s=String(ym); const y=s.slice(0,4); const m=s.slice(5,7); return y+'/'+m+'/25' }
 const fmt = d => d.replace(/-/g,'/')
 const tod = () => new Date().toISOString().split('T')[0]
 const sc  = s => !s?'s-':`s${s}`
@@ -414,7 +417,7 @@ function InputPage({ user }) {
       )}
       <div className="row" style={{marginBottom:14}}>
         <h2 style={{fontSize:17,fontWeight:700}}>{user.name} さんの確認箇所</h2>
-        <span style={{fontSize:12,color:'var(--tx3)'}}>— {fYM(curYM)}　締切：{deadline25().replace(/-/g,'/')}</span>
+        <span style={{fontSize:12,color:'var(--tx3)'}}>— {fYM(curYM)}　締切：{fmtDl(curYM)}</span>
       </div>
       {myLocs.length === 0 && <div className="card"><p className="empty">確認箇所が割り当てられていません。設定 → 担当箇所から設定してください。</p></div>}
       {myLocs.map(loc => {
@@ -511,7 +514,7 @@ function SummaryPage({ active }) {
           {reports.map(r=><option key={r.id} value={r.id}>{fYM(r.year_month)}</option>)}
         </select>
         {report && <>
-          <span style={{fontSize:12,color:'var(--tx2)'}}>締切：{report.deadline?.replace(/-/g,'/')||'—'}</span>
+          <span style={{fontSize:12,color:'var(--tx2)'}}>締切：{fmtDl(report.year_month)}</span>
           <span className={`badge ${report.status==='completed'?'b-done':'b-open'}`}>{report.status==='completed'?'完了':'進行中'}</span>
           <span style={{fontSize:12,color:'var(--tx2)'}}>入力済み <b style={{color:'var(--gr)'}}>{rows.filter(r=>r.is_submitted).length}</b>/{rows.length}箇所</span>
         </>}
@@ -635,7 +638,7 @@ function ReportPage({ active }) {
         <div className="rm">
           <span>報告月：{fYM(report?.year_month)}</span>
           <span>報告日：{repDate?.replace(/-/g,'/')||'—'}</span>
-          <span>締切：{report?.deadline?.replace(/-/g,'/')||'—'}</span>
+          <span>締切：{fmtDl(report?.year_month)}</span>
           <span className={`badge ${report?.status==='completed'?'b-done':'b-open'}`}>{report?.status==='completed'?'完了':'進行中'}</span>
         </div>
         <div className="tw" style={{border:'none',borderRadius:0}}>
