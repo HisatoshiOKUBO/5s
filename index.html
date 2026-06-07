@@ -334,7 +334,15 @@ function InputPage({ user }) {
     let rep = null
     const { data: ex } = await sb.from('monthly_reports').select('*').eq('year_month',curYM).single()
     if (ex) {
-      rep = ex
+      // deadline が未設定なら25日に自動補完
+      if (!ex.deadline) {
+        const { data: upd } = await sb.from('monthly_reports')
+          .update({ deadline: deadline25() })
+          .eq('id', ex.id).select().single()
+        rep = upd || ex
+      } else {
+        rep = ex
+      }
     } else {
       const { data: cr } = await sb.from('monthly_reports')
         .insert({ year_month:curYM, deadline:deadline25(), status:'open' })
