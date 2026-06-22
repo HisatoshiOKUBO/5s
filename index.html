@@ -174,6 +174,80 @@
       .rw { border:none; padding:0; border-radius:0; }
       table { font-size:10px; }
     }
+
+    /* ── ヘルプボタン ── */
+    .help-btn {
+      display:flex; align-items:center; gap:4px;
+      height:30px; padding:0 10px;
+      border-radius:var(--r); border:1px solid var(--gbd);
+      background:var(--glt); color:var(--gr);
+      font-size:12px; font-weight:600; white-space:nowrap;
+      transition:opacity .15s;
+    }
+    .help-btn:hover { opacity:.8; }
+
+    /* ── ヘルプモーダル ── */
+    .hm-overlay {
+      position:fixed; inset:0; z-index:1000;
+      background:rgba(0,0,0,.45);
+      display:flex; align-items:center; justify-content:center;
+      padding:16px;
+      animation:hm-fade-in .15s ease;
+    }
+    @keyframes hm-fade-in { from{opacity:0} to{opacity:1} }
+    .hm-box {
+      background:var(--sf); border-radius:12px;
+      width:100%; max-width:560px; max-height:88dvh;
+      display:flex; flex-direction:column;
+      box-shadow:0 8px 32px rgba(0,0,0,.18);
+      animation:hm-slide-in .18s ease;
+    }
+    @keyframes hm-slide-in { from{transform:translateY(12px);opacity:0} to{transform:none;opacity:1} }
+    .hm-hd {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:16px 20px 0; flex-shrink:0;
+    }
+    .hm-title { font-size:16px; font-weight:700; }
+    .hm-close {
+      width:30px; height:30px; border-radius:6px;
+      border:1px solid var(--bd); background:transparent;
+      color:var(--tx2); font-size:18px; line-height:1;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .hm-close:hover { background:var(--bg); }
+    .hm-body { overflow-y:auto; padding:16px 20px 20px; }
+    .hm-sec { margin-bottom:18px; }
+    .hm-sec:last-child { margin-bottom:0; }
+    .hm-sec-title {
+      font-size:13px; font-weight:700; color:var(--gr);
+      border-left:3px solid var(--gr); padding-left:8px;
+      margin-bottom:8px;
+    }
+    .hm-steps { list-style:none; padding:0; margin:0; }
+    .hm-steps li {
+      display:flex; gap:10px; align-items:flex-start;
+      font-size:13px; line-height:1.6; color:var(--tx);
+      padding:5px 0; border-bottom:1px solid var(--bd);
+    }
+    .hm-steps li:last-child { border-bottom:none; }
+    .hm-step-num {
+      width:20px; height:20px; border-radius:50%;
+      background:var(--gr); color:#fff;
+      font-size:10px; font-weight:700; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      margin-top:2px;
+    }
+    .hm-note {
+      font-size:12px; color:var(--tx2);
+      background:var(--bg); border:1px solid var(--bd);
+      border-radius:6px; padding:8px 12px; margin-top:8px;
+      line-height:1.7;
+    }
+    .hm-badge-ex {
+      display:inline-flex; align-items:center; gap:4px;
+      font-size:11px; padding:1px 7px; border-radius:20px;
+      font-weight:500; vertical-align:middle;
+    }
   </style>
 </head>
 <body>
@@ -216,6 +290,7 @@ function App() {
   const [user,     setUser]     = useState(null)  // null=名前選択 / '__settings__'=設定のみ / object=通常
   const [tab,      setTab]      = useState('input')
   const [loading,  setLoading]  = useState(true)
+  const [showHelp, setShowHelp] = useState(false)
 
   useEffect(() => { loadM() }, [])
 
@@ -252,16 +327,23 @@ function App() {
         <div id="hd-left">5S 活動報告</div>
         <div id="hd-logo"><img src={window._LOGO} alt="SAIBOKU" style={{height:"28px",display:"block"}} /></div>
         <div id="hd-right">
+          <button className="help-btn" onClick={() => setShowHelp(true)}>❓ ヘルプ</button>
           <button className="btn bo" style={{fontSize:12,height:30,padding:'0 12px'}} onClick={() => { loadM(); setUser(null) }}>← 戻る</button>
         </div>
       </header>
       <main id="main">
         <div className="page on"><SettingsPage onUpdate={loadM} /></div>
       </main>
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </div>
   )
 
-  if (!user) return <NameScreen members={members} onSelect={setUser} onSettings={() => setUser('__settings__')} />
+  if (!user) return (
+    <>
+      <NameScreen members={members} onSelect={setUser} onSettings={() => setUser('__settings__')} onHelp={() => setShowHelp(true)} />
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+    </>
+  )
 
   // 通常画面（名前選択後）
   return (
@@ -270,6 +352,7 @@ function App() {
         <div id="hd-left">5S 活動報告</div>
         <div id="hd-logo"><img src={window._LOGO} alt="SAIBOKU" style={{height:"28px",display:"block"}} /></div>
         <div id="hd-right">
+          <button className="help-btn" onClick={() => setShowHelp(true)}>❓ ヘルプ</button>
           <button className="tab" style={{fontSize:12,color:'var(--tx3)',border:'none',height:30}} onClick={() => setUser(null)}>[{user.name}] ▼</button>
           <button className="icon-btn" onClick={() => setUser('__settings__')} title="設定">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -289,12 +372,13 @@ function App() {
         <div id="pg-summary" className={`page ${tab==='summary'?'on':''}`}><SummaryPage active={tab==='summary'} /></div>
         <div id="pg-report"  className={`page ${tab==='report' ?'on':''}`}><ReportPage  active={tab==='report'} /></div>
       </main>
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </div>
   )
 }
 
 // ── 名前選択画面 ─────────────────────────────────────────────
-function NameScreen({ members, onSelect, onSettings }) {
+function NameScreen({ members, onSelect, onSettings, onHelp }) {
   return (
     <div id="ns">
       <div id="nc">
@@ -303,12 +387,15 @@ function NameScreen({ members, onSelect, onSettings }) {
             <img src={window._LOGO} alt="SAIBOKU" style={{height:"32px",display:"block",marginBottom:4}} />
             <div style={{fontSize:11,color:'var(--tx3)'}}>5S 活動報告システム</div>
           </div>
-          <button className="icon-btn" onClick={onSettings} title="設定">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-          </button>
+          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+            <button className="help-btn" onClick={onHelp}>❓ ヘルプ</button>
+            <button className="icon-btn" onClick={onSettings} title="設定">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+          </div>
         </div>
         <div style={{fontSize:12,color:'var(--tx2)',marginBottom:12,fontWeight:600}}>あなたのお名前を選んでください</div>
         {members.length === 0
@@ -965,6 +1052,101 @@ function SettingsPage({ onUpdate }) {
         </div>
       )}
     </>
+  )
+}
+
+// ── ヘルプモーダル ────────────────────────────────────────────
+function HelpModal({ onClose }) {
+  // ESCキーで閉じる
+  React.useEffect(() => {
+    const fn = e => { if(e.key==='Escape') onClose() }
+    document.addEventListener('keydown', fn)
+    return () => document.removeEventListener('keydown', fn)
+  }, [])
+
+  return (
+    <div className="hm-overlay" onClick={e=>{ if(e.target===e.currentTarget) onClose() }}>
+      <div className="hm-box" role="dialog" aria-modal="true" aria-label="ヘルプ">
+        <div className="hm-hd">
+          <div className="hm-title">📖 使い方ガイド</div>
+          <button className="hm-close" onClick={onClose} aria-label="閉じる">×</button>
+        </div>
+        <div className="hm-body">
+
+          {/* ① 基本的な流れ */}
+          <div className="hm-sec">
+            <div className="hm-sec-title">① 基本的な流れ（毎月の作業）</div>
+            <ul className="hm-steps">
+              <li><div className="hm-step-num">1</div><div>画面を開いたら<strong>自分の名前を選択</strong>してログインします。</div></li>
+              <li><div className="hm-step-num">2</div><div><strong>「チェック入力」タブ</strong>で、担当箇所ごとに5S（整理・整頓・清掃・清潔・しつけ）を1〜5点で評価し、「保存する」を押します。</div></li>
+              <li><div className="hm-step-num">3</div><div>今月の<strong>報告担当者</strong>は、全箇所の入力が完了したら「レポート」タブでPDF出力してください。</div></li>
+              <li><div className="hm-step-num">4</div><div>管理者は「定点報告一覧」タブで全員の入力状況を確認できます。全箇所が揃ったら「完了にする」で月次を締めます。</div></li>
+            </ul>
+          </div>
+
+          {/* ② チェック入力の使い方 */}
+          <div className="hm-sec">
+            <div className="hm-sec-title">② チェック入力タブ</div>
+            <ul className="hm-steps">
+              <li><div className="hm-step-num">1</div><div>自分が<strong>「確認者」として担当する箇所</strong>が表示されます（設定で割り当て）。</div></li>
+              <li><div className="hm-step-num">2</div><div>各5S項目の右上「評価基準 ▼」をタップすると、各点数の意味が表示されます。参考にして採点してください。</div></li>
+              <li><div className="hm-step-num">3</div><div>5項目すべてに点数を入れると合計点が表示されます。特記事項は任意入力です。</div></li>
+              <li><div className="hm-step-num">4</div><div>「保存する」を押すとデータが保存されます。再度押すと<strong>上書き更新</strong>できます。</div></li>
+            </ul>
+            <div className="hm-note">
+              💡 画面上部に <span className="hm-badge-ex" style={{background:'var(--blt)',color:'var(--bl)',border:'1px solid var(--bbd)'}}>今月の報告担当</span> バッジが表示されている場合、あなたがPDF出力を担当します。
+            </div>
+          </div>
+
+          {/* ③ 定点報告一覧タブ */}
+          <div className="hm-sec">
+            <div className="hm-sec-title">③ 定点報告一覧タブ</div>
+            <ul className="hm-steps">
+              <li><div className="hm-step-num">1</div><div>月を選択すると、全定点箇所の入力状況が一覧表示されます。</div></li>
+              <li><div className="hm-step-num">2</div><div>各行をタップすると、<strong>特記事項と確認者名</strong>が展開表示されます。</div></li>
+              <li><div className="hm-step-num">3</div><div>一番下の行に各項目の合計点が表示されます。</div></li>
+            </ul>
+            <div className="hm-note">
+              ステータス：<span className="hm-badge-ex" style={{background:'var(--alt)',color:'var(--am)'}}>進行中</span> = 入力受付中　<span className="hm-badge-ex" style={{background:'var(--glt)',color:'var(--gr)',border:'1px solid var(--gbd)'}}>完了</span> = 締め済み
+            </div>
+          </div>
+
+          {/* ④ レポートタブ */}
+          <div className="hm-sec">
+            <div className="hm-sec-title">④ レポートタブ（PDF出力）</div>
+            <ul className="hm-steps">
+              <li><div className="hm-step-num">1</div><div>月を選択し、報告日を入力します（自動保存）。</div></li>
+              <li><div className="hm-step-num">2</div><div>全箇所の入力が完了していると「完了にする」ボタンが表示されます。押すとステータスが締め済みになります。</div></li>
+              <li><div className="hm-step-num">3</div><div><strong>「PDF出力（印刷）」</strong>ボタンを押すと印刷ダイアログが開きます。「PDFとして保存」を選ぶとファイルに保存できます。</div></li>
+            </ul>
+          </div>
+
+          {/* ⑤ 設定 */}
+          <div className="hm-sec">
+            <div className="hm-sec-title">⑤ 設定（管理者向け）</div>
+            <ul className="hm-steps">
+              <li><div className="hm-step-num">1</div><div><strong>担当者</strong>：メンバーの追加・削除・並び替え（ドラッグ）ができます。並び順がローテーション順になります。</div></li>
+              <li><div className="hm-step-num">2</div><div><strong>担当箇所</strong>：定点箇所ごとに「5S担当者」と「確認者」をプルダウンで割り当て、「保存する」を押します。</div></li>
+              <li><div className="hm-step-num">3</div><div><strong>定点観測場所</strong>：大分類と詳細名を入力して場所を追加・削除できます。</div></li>
+              <li><div className="hm-step-num">4</div><div><strong>報告担当者</strong>：ローテーション対象にチェックを入れ、「今月の担当にする」で当月担当者を確定します。</div></li>
+            </ul>
+            <div className="hm-note">
+              ⚙️ 設定画面は名前選択画面の右上、またはヘッダー右上の歯車アイコンから開けます。
+            </div>
+          </div>
+
+          {/* 締切について */}
+          <div className="hm-sec">
+            <div className="hm-sec-title">⑥ 締切・スコアについて</div>
+            <div className="hm-note" style={{marginTop:0}}>
+              📅 <strong>締切は毎月25日</strong>です。各月の締切日はチェック入力画面や一覧に表示されます。<br/>
+              🏆 <strong>スコア</strong>：各5S項目を1〜5点で評価（5項目合計で最大25点）。高いほど活動が定着していることを示します。
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
   )
 }
 
