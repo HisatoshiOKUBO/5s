@@ -717,7 +717,19 @@ function ReportPage({ active }) {
         <div style={{marginLeft:'auto',display:'flex',gap:8}}>
           {report?.status==='open'&&rows.length>0&&rows.every(r=>r.is_submitted)&&
             <button className="btn bo" onClick={complete}>完了にする</button>}
-          <button className="btn bp" onClick={()=>window.print()} disabled={!rows.length}>PDF出力（印刷）</button>
+          <button className="btn bp" onClick={()=>{
+            const ym = report?.year_month // "2026-06-01" 形式
+            let pdfName = '定期5S活動報告_サイボクファーム'
+            if(ym){
+              const y = ym.slice(0,4)
+              const m = ym.slice(5,7)
+              pdfName += `_${y}${m}`
+            }
+            const prev = document.title
+            document.title = pdfName
+            window.print()
+            document.title = prev
+          }} disabled={!rows.length}>PDF出力（印刷）</button>
         </div>
       </div>
       <div className="rw">
